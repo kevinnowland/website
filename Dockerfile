@@ -7,7 +7,7 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
-COPY . .
+COPY cmd cmd
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o main cmd/main.go
 
@@ -19,7 +19,8 @@ RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 COPY --from=builder /build/main .
+COPY static static
 
-EXPOSE 80
+EXPOSE 8080
 
 CMD ["/app/main"]

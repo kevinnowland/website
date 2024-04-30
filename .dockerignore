@@ -1,5 +1,6 @@
 **
 !/cmd
 !/pkg
+!/static
 !/go.mod
 !/go.sum

@@ -2,13 +2,22 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 )
 
 func main() {
 	logger := getLogger()
 
-	logger.Info("hello, world!")
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/", fs)
+
+	logger.Info("Listening", slog.Int("port", 8080))
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		logger.Error(err.Error())
+		panic(err)
+	}
 }
 
 func getLogger() *slog.Logger {
