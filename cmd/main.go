@@ -1,20 +1,20 @@
 package main
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
+
+	"website/pkg"
 )
 
 func main() {
 	logger := getLogger()
-	loggingHandler := newLoggingHandler(logger)
+	loggingHandler := pkg.NewLoggingHandler(logger)
 
 	mux := http.NewServeMux()
 
-	healthzHandler := http.HandlerFunc(healthz)
+	healthzHandler := http.HandlerFunc(pkg.Healthz)
 	mux.Handle("/healthz", loggingHandler(healthzHandler))
 
 	fs := http.FileServer(http.Dir("./static"))
@@ -51,34 +51,4 @@ func getLogger() *slog.Logger {
 	logger := slog.New(handler)
 
 	return logger
-}
-
-func newLoggingHandler(logger *slog.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.Info(
-				"Handling",
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-			)
-
-			ctx := context.WithValue(r.Context(), "StartTime", time.Now())
-
-			next.ServeHTTP(w, r)
-
-			t := time.Now()
-			elapsed := t.Sub(ctx.Value("StartTime").(time.Time))
-
-			logger.Info(
-				"FinishedHAndling",
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-				slog.Int64("duration_ns", elapsed.Nanoseconds()),
-			)
-		})
-	}
-}
-
-func healthz(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
 }
