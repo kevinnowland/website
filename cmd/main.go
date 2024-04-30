@@ -8,13 +8,18 @@ import (
 
 func main() {
 	logger := getLogger()
+	loggingHandler := newLoggingHandler(logger)
+
+	mux := http.NewServeMux()
+
+	healthzHandler := http.HandlerFunc(healthz)
+	mux.Handle("/healthz", loggingHandler(healthzHandler))
 
 	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/", fs)
-	http.HandleFunc("/healthz", healthz)
+	mux.Handle("/", loggingHandler(fs))
 
 	logger.Info("Listening", slog.Int("port", 8080))
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
@@ -44,6 +49,19 @@ func getLogger() *slog.Logger {
 	logger := slog.New(handler)
 
 	return logger
+}
+
+func newLoggingHandler(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger.Info(
+				"Handling",
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+			)
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func healthz(w http.ResponseWriter, r *http.Request) {
