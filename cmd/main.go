@@ -11,6 +11,7 @@ func main() {
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
+	http.HandleFunc("/healthz", healthz)
 
 	logger.Info("Listening", slog.Int("port", 8080))
 	err := http.ListenAndServe(":8080", nil)
@@ -43,4 +44,8 @@ func getLogger() *slog.Logger {
 	logger := slog.New(handler)
 
 	return logger
+}
+
+func healthz(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
