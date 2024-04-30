@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -60,12 +62,18 @@ func newLoggingHandler(logger *slog.Logger) func(http.Handler) http.Handler {
 				slog.String("path", r.URL.Path),
 			)
 
+			ctx := context.WithValue(r.Context(), "StartTime", time.Now())
+
 			next.ServeHTTP(w, r)
+
+			t := time.Now()
+			elapsed := t.Sub(ctx.Value("StartTime").(time.Time))
 
 			logger.Info(
 				"FinishedHAndling",
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
+				slog.Int64("duration_ns", elapsed.Nanoseconds()),
 			)
 		})
 	}
