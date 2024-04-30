@@ -59,7 +59,14 @@ func newLoggingHandler(logger *slog.Logger) func(http.Handler) http.Handler {
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
 			)
+
 			next.ServeHTTP(w, r)
+
+			logger.Info(
+				"FinishedHAndling",
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+			)
 		})
 	}
 }
