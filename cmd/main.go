@@ -41,11 +41,11 @@ func getLogger() *slog.Logger {
 		logLevel = slog.LevelInfo
 	}
 
-	logOpts := &slog.HandlerOptions{
+	opts := &slog.HandlerOptions{
 		Level:     logLevel,
-		AddSource: true,
+		AddSource: false,
 	}
-	handler := (slog.NewJSONHandler(os.Stdout, logOpts))
+	handler := (slog.NewJSONHandler(os.Stdout, opts))
 	logger := slog.New(handler)
 
 	return logger
