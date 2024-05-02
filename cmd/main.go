@@ -19,8 +19,11 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/", loggingHandler(http.StripPrefix("/static/", fs)))
 
-	templateHandler := http.HandlerFunc(pkg.ServeTemplate)
-	mux.Handle("/", loggingHandler(templateHandler))
+	indexHandler := http.HandlerFunc(pkg.Index)
+	mux.Handle("/{$}", loggingHandler(indexHandler))
+
+	genericTemplateHandler := http.HandlerFunc(pkg.GenericTemplate)
+	mux.Handle("/", loggingHandler(genericTemplateHandler))
 
 	logger.Info("Listening", slog.Int("port", 8080))
 	err := http.ListenAndServe(":8080", mux)
