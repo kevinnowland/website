@@ -17,7 +17,10 @@ func main() {
 	mux.Handle("/healthz", loggingHandler(healthzHandler))
 
 	fs := http.FileServer(http.Dir("./static"))
-	mux.Handle("/", loggingHandler(fs))
+	mux.Handle("/static/", loggingHandler(http.StripPrefix("/static/", fs)))
+
+	templateHandler := http.HandlerFunc(pkg.ServeTemplate)
+	mux.Handle("/", loggingHandler(templateHandler))
 
 	logger.Info("Listening", slog.Int("port", 8080))
 	err := http.ListenAndServe(":8080", mux)
