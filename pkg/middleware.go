@@ -24,7 +24,7 @@ func NewLoggingHandler(logger *slog.Logger) func(http.Handler) http.Handler {
 			elapsed := t.Sub(ctx.Value("StartTime").(time.Time))
 
 			logger.Info(
-				"FinishedHAndling",
+				"FinishedHandling",
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
 				slog.Int64("duration_ns", elapsed.Nanoseconds()),
