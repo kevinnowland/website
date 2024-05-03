@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"log/slog"
-	"net"
 	"net/http"
 )
 
@@ -23,13 +21,9 @@ func main() {
 	mux.Handle("/", loggingMiddleware(genericTemplateHandler))
 
 	server := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			ctx = context.WithValue(ctx, "Errors", []error{})
-			ctx = context.WithValue(ctx, "LogStrings", map[string]string{})
-			return ctx
-		},
+		Addr:        ":8080",
+		Handler:     mux,
+		ConnContext: ConnContext,
 	}
 
 	logger.Info("Listening", slog.Int("port", 8080))
