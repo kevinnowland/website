@@ -14,9 +14,6 @@ func main() {
 	healthzHandler := http.HandlerFunc(Healthz)
 	mux.Handle("/healthz", loggingMiddleware(healthzHandler))
 
-	fs := http.FileServer(http.Dir("./static"))
-	mux.Handle("/static/", loggingMiddleware(http.StripPrefix("/static/", fs)))
-
 	indexHandler := http.HandlerFunc(Index)
 	mux.Handle("/{$}", loggingMiddleware(indexHandler))
 

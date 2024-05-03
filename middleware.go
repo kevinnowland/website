@@ -60,9 +60,3 @@ func NewLoggingMiddleware(logger *slog.Logger) Middleware {
 		})
 	}
 }
-
-func NewStripPrefixMiddleware(prefix string) Middleware {
-	return func(next http.Handler) http.Handler {
-		return http.StripPrefix(prefix, next)
-	}
-}
