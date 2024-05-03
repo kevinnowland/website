@@ -23,8 +23,13 @@ func main() {
 	genericTemplateHandler := http.HandlerFunc(GenericTemplate)
 	mux.Handle("/", loggingHandler(genericTemplateHandler))
 
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
 	logger.Info("Listening", slog.Int("port", 8080))
-	err := http.ListenAndServe(":8080", mux)
+	err := server.ListenAndServe()
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
