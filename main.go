@@ -3,26 +3,24 @@ package main
 import (
 	"log/slog"
 	"net/http"
-
-	"website/pkg"
 )
 
 func main() {
-	logger := pkg.NewLogger()
-	loggingHandler := pkg.NewLoggingHandler(logger)
+	logger := NewLogger()
+	loggingHandler := NewLoggingHandler(logger)
 
 	mux := http.NewServeMux()
 
-	healthzHandler := http.HandlerFunc(pkg.Healthz)
+	healthzHandler := http.HandlerFunc(Healthz)
 	mux.Handle("/healthz", loggingHandler(healthzHandler))
 
 	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/", loggingHandler(http.StripPrefix("/static/", fs)))
 
-	indexHandler := http.HandlerFunc(pkg.Index)
+	indexHandler := http.HandlerFunc(Index)
 	mux.Handle("/{$}", loggingHandler(indexHandler))
 
-	genericTemplateHandler := http.HandlerFunc(pkg.GenericTemplate)
+	genericTemplateHandler := http.HandlerFunc(GenericTemplate)
 	mux.Handle("/", loggingHandler(genericTemplateHandler))
 
 	logger.Info("Listening", slog.Int("port", 8080))

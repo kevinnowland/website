@@ -1,4 +1,4 @@
-package pkg
+package main
 
 import (
 	"log/slog"
@@ -7,7 +7,7 @@ import (
 
 func NewLogger() *slog.Logger {
 	var logLevel slog.Level
-	switch l := os.Getenv("WEBSITE_LOG_LEVEL"); l {
+	switch l := os.Getenv("main_LOG_LEVEL"); l {
 	case "DEBUG":
 		logLevel = slog.LevelDebug
 	case "INFO":

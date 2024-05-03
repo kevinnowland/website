@@ -4,7 +4,20 @@ This repo is the basis of my personal website.
 
 ## Run locally
 
-Build and run with docker:
+To run directly with go:
+
+```bash
+docker run website
+```
+
+To build then run with go:
+
+```bash
+go build
+./website
+```
+
+To build and run with docker:
 
 ```bash
 docker build -t website .
