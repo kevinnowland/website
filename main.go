@@ -7,21 +7,21 @@ import (
 
 func main() {
 	logger := NewLogger()
-	loggingHandler := NewLoggingHandler(logger)
+	loggingMiddleware := NewLoggingMiddleware(logger)
 
 	mux := http.NewServeMux()
 
 	healthzHandler := http.HandlerFunc(Healthz)
-	mux.Handle("/healthz", loggingHandler(healthzHandler))
+	mux.Handle("/healthz", loggingMiddleware(healthzHandler))
 
 	fs := http.FileServer(http.Dir("./static"))
-	mux.Handle("/static/", loggingHandler(http.StripPrefix("/static/", fs)))
+	mux.Handle("/static/", loggingMiddleware(http.StripPrefix("/static/", fs)))
 
 	indexHandler := http.HandlerFunc(Index)
-	mux.Handle("/{$}", loggingHandler(indexHandler))
+	mux.Handle("/{$}", loggingMiddleware(indexHandler))
 
 	genericTemplateHandler := http.HandlerFunc(GenericTemplate)
-	mux.Handle("/", loggingHandler(genericTemplateHandler))
+	mux.Handle("/", loggingMiddleware(genericTemplateHandler))
 
 	server := &http.Server{
 		Addr:    ":8080",
