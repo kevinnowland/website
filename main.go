@@ -7,18 +7,32 @@ import (
 
 func main() {
 	logger := NewLogger()
-	loggingMiddleware := NewLoggingMiddleware(logger)
+
+	middlewareChain := []Middleware{
+		RequestInfoMiddleware,
+		NewLoggingMiddleware(logger),
+		DurationMiddleware,
+	}
 
 	mux := http.NewServeMux()
 
-	healthzHandler := http.HandlerFunc(Healthz)
-	mux.Handle("/healthz", loggingMiddleware(healthzHandler))
+	healthzHandler := ApplyMiddlewareChain(
+		http.HandlerFunc(Healthz),
+		middlewareChain,
+	)
+	mux.Handle("/healthz", healthzHandler)
 
-	indexHandler := http.HandlerFunc(Index)
-	mux.Handle("/{$}", loggingMiddleware(indexHandler))
+	indexHandler := ApplyMiddlewareChain(
+		http.HandlerFunc(Index),
+		middlewareChain,
+	)
+	mux.Handle("/{$}", indexHandler)
 
-	genericTemplateHandler := http.HandlerFunc(GenericTemplate)
-	mux.Handle("/", loggingMiddleware(genericTemplateHandler))
+	genericTemplateHandler := ApplyMiddlewareChain(
+		http.HandlerFunc(GenericTemplate),
+		middlewareChain,
+	)
+	mux.Handle("/", genericTemplateHandler)
 
 	server := &http.Server{
 		Addr:        ":8080",

@@ -1,3 +1,7 @@
+// All of the Middleware functions assume that we are using a context
+// that has a "LogAttrs" key with value of type []slog.Attr
+//
+// For the most part we assume that anything we save in the context we want to log
 package main
 
 import (
@@ -5,6 +9,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type StatusRecorder struct {
@@ -30,32 +36,68 @@ func ApplyMiddlewareChain(handler http.Handler, chain MiddlewareChain) http.Hand
 	return ApplyMiddlewareChain(chain[length-1](handler), chain[:length-1])
 }
 
+func RequestInfoMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		attrs := ctx.Value(LogAttrs).([]slog.Attr)
+		attrs = append(attrs, slog.String("method", r.Method))
+		attrs = append(attrs, slog.String("path", r.URL.Path))
+		ctx = context.WithValue(ctx, LogAttrs, attrs)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func DurationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		next.ServeHTTP(w, r)
+
+		elapsed := time.Now().Sub(start)
+
+		ctx := r.Context()
+		attrs := ctx.Value(LogAttrs).([]slog.Attr)
+		attrs = append(attrs, slog.Int64("duration_ns", elapsed.Nanoseconds()))
+		ctx = context.WithValue(ctx, LogAttrs, attrs)
+		req := r.WithContext(ctx)
+		*r = *req
+	})
+}
+
+// TODO: pull out the status handler
 func NewLoggingMiddleware(logger *slog.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.Info(
+			ctx := r.Context()
+			requestId := ctx.Value(RequestId).(uuid.UUID)
+			attrs := ctx.Value(LogAttrs).([]slog.Attr)
+			attrs = append(attrs, slog.String("requestId", requestId.String()))
+			logger.LogAttrs(
+				r.Context(),
+				slog.LevelInfo,
 				"Handling",
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
+				attrs...,
 			)
-
-			ctx := context.WithValue(r.Context(), "StartTime", time.Now())
 
 			recorder := &StatusRecorder{
 				ResponseWriter: w,
 				StatusCode:     200,
 			}
+
+			ctx = context.WithValue(ctx, LogAttrs, attrs)
+			req := r.WithContext(ctx)
+			*r = *req
 			next.ServeHTTP(recorder, r)
 
-			t := time.Now()
-			elapsed := t.Sub(ctx.Value("StartTime").(time.Time))
-
-			logger.Info(
+			ctx = r.Context()
+			attrs = ctx.Value(LogAttrs).([]slog.Attr)
+			attrs = append(attrs, slog.Int("statusCode", recorder.StatusCode))
+			logger.LogAttrs(
+				r.Context(),
+				slog.LevelInfo,
 				"FinishedHandling",
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-				slog.Int64("duration_ns", elapsed.Nanoseconds()),
-				slog.Int("status_code", recorder.StatusCode),
+				attrs...,
 			)
 		})
 	}
