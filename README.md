@@ -7,7 +7,7 @@ This repo is the basis of my personal website.
 To run directly with go:
 
 ```bash
-docker run website
+go run website
 ```
 
 To build then run with go:
