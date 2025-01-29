@@ -15,11 +15,11 @@ import (
 
 type StatusRecorder struct {
 	http.ResponseWriter
-	StatusCode int
+	StatusCode *int
 }
 
-func (w *StatusRecorder) WriteHeader(status int) {
-	w.StatusCode = status
+func (w StatusRecorder) WriteHeader(status int) {
+	w.StatusCode = &status
 	w.ResponseWriter.WriteHeader(status)
 }
 
@@ -45,6 +45,13 @@ func RequestInfoMiddleware(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, LogAttrs, attrs)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func StatusRecorderMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		recorder := StatusRecorder{w, nil}
+		next.ServeHTTP(recorder, r)
 	})
 }
 
@@ -80,19 +87,13 @@ func NewLoggingMiddleware(logger *slog.Logger) Middleware {
 				attrs...,
 			)
 
-			recorder := &StatusRecorder{
-				ResponseWriter: w,
-				StatusCode:     200,
-			}
-
 			ctx = context.WithValue(ctx, LogAttrs, attrs)
 			req := r.WithContext(ctx)
 			*r = *req
-			next.ServeHTTP(recorder, r)
+			next.ServeHTTP(w, r)
 
 			ctx = r.Context()
 			attrs = ctx.Value(LogAttrs).([]slog.Attr)
-			attrs = append(attrs, slog.Int("statusCode", recorder.StatusCode))
 			logger.LogAttrs(
 				r.Context(),
 				slog.LevelInfo,
